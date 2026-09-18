@@ -1,0 +1,237 @@
+import { wm } from 'resource:///org/gnome/shell/ui/main.js';
+import Shell from 'gi://Shell';
+import Meta from 'gi://Meta';
+import Gio from 'gi://Gio';
+import * as log from '../utils/log.js';
+const SYSTEM_KEYBINDING_SCHEMAS = [
+    'org.gnome.desktop.wm.keybindings',
+    'org.gnome.shell.keybindings',
+    'org.gnome.mutter.keybindings',
+    'org.gnome.mutter.wayland.keybindings',
+];
+const MODIFIER_ALIASES = {
+    primary: '<Control>',
+    control: '<Control>',
+    ctrl: '<Control>',
+    ctl: '<Control>',
+    shift: '<Shift>',
+    shft: '<Shift>',
+    alt: '<Alt>',
+    mod1: '<Alt>',
+    mod2: '<Mod2>',
+    mod3: '<Mod3>',
+    mod4: '<Mod4>',
+    mod5: '<Mod5>',
+    meta: '<Meta>',
+    hyper: '<Hyper>',
+    super: '<Super>',
+};
+function normalize_accelerator(accelerator) {
+    if (!accelerator)
+        return null;
+    const modifiers = [];
+    const modifier_pattern = /<[^<>]+>/g;
+    let match;
+    while ((match = modifier_pattern.exec(accelerator)) !== null) {
+        const token = MODIFIER_ALIASES[match[0].slice(1, -1).toLowerCase()] ?? match[0];
+        modifiers.push(token);
+    }
+    const rest = accelerator.replace(modifier_pattern, '');
+    if (!rest)
+        return null;
+    const key = rest.length === 1 ? rest.toLowerCase() : rest;
+    modifiers.sort();
+    return `${modifiers.join('')}${key}`;
+}
+function accelerators_equal(left, right) {
+    if (!Array.isArray(right) || left.length !== right.length)
+        return false;
+    const normalized = (values) => values.map((value) => normalize_accelerator(value) ?? value).sort();
+    const normalized_right = normalized(right);
+    return normalized(left).every((value, index) => value === normalized_right[index]);
+}
+
+export class Keybindings {
+    global;
+    window_focus;
+    ext;
+    active = new Set();
+    cleared_system_bindings = new Map();
+    system_settings = new Map();
+    get_system_settings(schema_id) {
+        let settings = this.system_settings.get(schema_id);
+        if (settings)
+            return settings;
+        const source = Gio.SettingsSchemaSource.get_default();
+        if (!source || !source.lookup(schema_id, true))
+            return null;
+        settings = new Gio.Settings({ schema_id });
+        this.system_settings.set(schema_id, settings);
+        return settings;
+    }
+    // Persist cleared_system_bindings to gsettings so it survives shell restart.
+    persist_cleared_bindings() {
+        try {
+            const obj = {};
+            for (const [name, entries] of this.cleared_system_bindings) {
+                obj[name] = entries;
+            }
+            this.ext.settings.set_cleared_system_bindings_raw(JSON.stringify(obj));
+        }
+        catch (e) {
+            // best-effort, never block keybinding enable/disable
+            log.error(`failed to persist cleared system bindings: ${e}`);
+        }
+    }
+    load_persisted_cleared_bindings() {
+        try {
+            const raw = this.ext.settings.cleared_system_bindings_raw();
+            const parsed = raw ? JSON.parse(raw) : {};
+            return new Map(Object.entries(parsed));
+        }
+        catch (e) {
+            log.error(`failed to parse persisted cleared system bindings: ${e}`);
+            return new Map();
+        }
+    }
+    record_system_write(schema_id, key, before, after) {
+        for (const entries of this.cleared_system_bindings.values()) {
+            for (const entry of entries) {
+                if (entry.schema_id === schema_id && entry.key === key) {
+                    entry.expected = accelerators_equal(before, entry.expected) ? [...after] : undefined;
+                }
+            }
+        }
+    }
+    // Restore bindings left cleared by an unclean shutdown (reboot/logout/crash).
+    // No-op after a clean disable(), since restore_conflicts() empties the store.
+    restore_orphaned_bindings() {
+        const persisted = this.load_persisted_cleared_bindings();
+        if (persisted.size === 0)
+            return;
+        this.cleared_system_bindings = persisted;
+        for (const name of [...persisted.keys()])
+            this.restore_conflicts(name);
+    }
+    resolve_conflicts(name, accelerators) {
+        for (const accel of accelerators) {
+            const target = normalize_accelerator(accel);
+            if (!target)
+                continue;
+            for (const schema_id of SYSTEM_KEYBINDING_SCHEMAS) {
+                const settings = this.get_system_settings(schema_id);
+                if (!settings)
+                    continue;
+                for (const key of settings.settings_schema.list_keys()) {
+                    const schema_key = settings.settings_schema.get_key(key);
+                    if (schema_key.get_value_type().dup_string() !== 'as')
+                        continue;
+                    const current = settings.get_strv(key);
+                    if (current.length === 0)
+                        continue;
+                    const remaining = current.filter((existing) => normalize_accelerator(existing) !== target);
+                    if (remaining.length === current.length)
+                        continue;
+                    settings.set_strv(key, remaining);
+                    this.record_system_write(schema_id, key, current, remaining);
+                    const removed = current.filter((existing) => normalize_accelerator(existing) === target);
+                    const entries = this.cleared_system_bindings.get(name) ?? [];
+                    for (const removed_accel of removed) {
+                        entries.push({ schema_id, key, accelerator: removed_accel, expected: [...remaining] });
+                    }
+                    this.cleared_system_bindings.set(name, entries);
+                    this.persist_cleared_bindings();
+                }
+            }
+        }
+    }
+    restore_conflicts(name) {
+        const entries = this.cleared_system_bindings.get(name);
+        if (!entries)
+            return;
+        const settings_to_restore = new Map();
+        for (const entry of entries) {
+            const id = `${entry.schema_id}\0${entry.key}`;
+            const grouped = settings_to_restore.get(id) ?? [];
+            grouped.push(entry);
+            settings_to_restore.set(id, grouped);
+        }
+        for (const grouped of settings_to_restore.values()) {
+            const [{ schema_id, key }] = grouped;
+            const settings = this.get_system_settings(schema_id);
+            if (!settings)
+                continue;
+            const current = settings.get_strv(key);
+            const restorable = grouped.filter(({ expected }) => accelerators_equal(current, expected));
+            if (restorable.length === 0)
+                continue;
+            const restored = [...current];
+            for (const { accelerator } of restorable) {
+                const target = normalize_accelerator(accelerator);
+                if (restored.some((value) => normalize_accelerator(value) === target))
+                    continue;
+                restored.push(accelerator);
+            }
+            settings.set_strv(key, restored);
+            this.record_system_write(schema_id, key, current, restored);
+        }
+        this.cleared_system_bindings.delete(name);
+        this.persist_cleared_bindings();
+    }
+    constructor(ext) {
+        this.ext = ext;
+        // Recover accelerators left cleared by a previous unclean shutdown.
+        this.restore_orphaned_bindings();
+        this.global = {
+            'tile-enter': () => ext.tiler.enter(ext),
+        };
+        this.window_focus = {
+            'focus-left': () => ext.focus_left(),
+            'focus-down': () => ext.focus_down(),
+            'focus-up': () => ext.focus_up(),
+            'focus-right': () => ext.focus_right(),
+            'tile-orientation': () => {
+                const win = ext.focus_window();
+                if (win && ext.auto_tiler) {
+                    ext.auto_tiler.toggle_orientation(ext, win);
+                    ext.register_fn(() => win.activate(true));
+                }
+            },
+            'toggle-floating': () => ext.auto_tiler?.toggle_floating(ext),
+            'toggle-tiling': () => ext.toggle_tiling(),
+            'toggle-stacking-global': () => ext.auto_tiler?.toggle_stacking(ext),
+            'tile-move-left-global': () => ext.tiler.move_left(ext, ext.focus_window()?.entity),
+            'tile-move-down-global': () => ext.tiler.move_down(ext, ext.focus_window()?.entity),
+            'tile-move-up-global': () => ext.tiler.move_up(ext, ext.focus_window()?.entity),
+            'tile-move-right-global': () => ext.tiler.move_right(ext, ext.focus_window()?.entity),
+            'pop-monitor-left': () => ext.move_monitor(Meta.DisplayDirection.LEFT),
+            'pop-monitor-right': () => ext.move_monitor(Meta.DisplayDirection.RIGHT),
+            'pop-monitor-up': () => ext.move_monitor(Meta.DisplayDirection.UP),
+            'pop-monitor-down': () => ext.move_monitor(Meta.DisplayDirection.DOWN),
+            'pop-workspace-up': () => ext.move_workspace(Meta.DisplayDirection.UP),
+            'pop-workspace-down': () => ext.move_workspace(Meta.DisplayDirection.DOWN),
+        };
+    }
+    enable(keybindings) {
+        for (const name in keybindings) {
+            if (this.active.has(name)) {
+                continue;
+            }
+            const accelerators = this.ext.settings.ext.get_strv(name);
+            this.resolve_conflicts(name, accelerators);
+            wm.addKeybinding(name, this.ext.settings.ext, Meta.KeyBindingFlags.NONE, Shell.ActionMode.NORMAL, keybindings[name]);
+            this.active.add(name);
+        }
+        return this;
+    }
+    disable(keybindings) {
+        for (const name in keybindings) {
+            if (!this.active.has(name))
+                continue;
+            wm.removeKeybinding(name);
+            this.restore_conflicts(name);
+            this.active.delete(name);
+        }
+        return this;
+    }
+}

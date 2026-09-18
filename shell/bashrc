@@ -1,0 +1,53 @@
+# .bashrc
+
+# Source global definitions
+if [ -f /etc/bashrc ]; then
+    . /etc/bashrc
+fi
+
+# User specific environment
+if ! [[ "$PATH" =~ "$HOME/.local/bin:$HOME/bin:" ]]; then
+    PATH="$HOME/.local/bin:$HOME/bin:$PATH"
+fi
+export PATH
+
+# Uncomment the following line if you don't like systemctl's auto-paging feature:
+# export SYSTEMD_PAGER=
+
+# User specific aliases and functions
+if [ -d ~/.bashrc.d ]; then
+    for rc in ~/.bashrc.d/*; do
+        if [ -f "$rc" ]; then
+            . "$rc"
+        fi
+    done
+fi
+unset rc
+
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+
+export PATH="$PATH:/home/ruddypp/.foundry/bin"
+
+export PATH="$PATH:/home/ruddypp/.foundry/bin"
+
+export PATH="$PATH:$HOME/.config/composer/vendor/bin:$HOME/.composer/vendor/bin"
+export TERM=xterm
+
+
+# Added by Antigravity CLI installer
+export PATH="/home/ruddypp/.local/bin:$PATH"
+
+# Prefer user-installed .NET SDKs, such as the version required by Avalonia.
+export DOTNET_ROOT="$HOME/.dotnet"
+export PATH="$HOME/.dotnet:$PATH"
+
+# >>> grok installer >>>
+export PATH="$HOME/.grok/bin:$PATH"
+[[ -r "$HOME/.grok/completions/bash/grok.bash" ]] && source "$HOME/.grok/completions/bash/grok.bash"
+# <<< grok installer <<<
+export PATH=/home/ruddypp/.grok/bin:/home/ruddypp/.dotnet:/home/ruddypp/.local/bin:/home/ruddypp/.local/bin:/home/ruddypp/.bun/bin:/home/ruddypp/.grok/bin:/home/ruddypp/.dotnet:/home/ruddypp/.local/bin:/home/ruddypp/.nvm/versions/node/v24.12.0/bin:/home/ruddypp/.local/bin:/home/ruddypp/bin:/usr/local/bin:/usr/bin:/var/lib/snapd/snap/bin:/home/ruddypp/.composer/vendor/bin:/home/ruddypp/.dotnet/tools:/home/ruddypp/.foundry/bin:/home/ruddypp/.foundry/bin:/home/ruddypp/.config/composer/vendor/bin:/home/ruddypp/.composer/vendor/bin:/home/ruddypp/.foundry/bin:/home/ruddypp/.foundry/bin:/home/ruddypp/.config/composer/vendor/bin:/home/ruddypp/.composer/vendor/bin:/usr/local/go/bin
+
+# Claude Code: profil terpisah akun pribadi Rahmat (kerja tetap pakai `claude`)
+alias claude-rahmat='CLAUDE_CONFIG_DIR="$HOME/.claude-rahmat" claude'

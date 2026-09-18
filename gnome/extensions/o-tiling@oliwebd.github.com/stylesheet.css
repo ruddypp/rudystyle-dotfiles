@@ -1,0 +1,303 @@
+/* ── Base Styles (Light Mode) ───────────────────────────────── */
+
+.o-tiling-active-hint {
+    border-style: solid;
+    border-color: #3584e4;
+    border-radius: 14px;
+    border-width: 4px;
+}
+
+.o-tiling-overlay {
+    background-color: rgba(53, 132, 228, 0.3);
+    border-radius: 14px;
+}
+
+.o-tiling-overlay-label {
+    color: #ffffff;
+    font-weight: bold;
+    font-size: 14pt;
+    text-shadow: 0px 1px 3px rgba(0, 0, 0, 0.6);
+    background-color: rgba(0, 0, 0, 0.35);
+    border-radius: 999px;
+    padding: 6px 18px;
+}
+
+.o-tiling-border-normal {
+    border-width: 1px;
+}
+
+.o-tiling-border-maximize {
+    border-width: 0px;
+    border-radius: 0px;
+}
+
+/* ── Panel menu spin-box control ─────────────────────────── */
+
+.o-tiling-spin-box {
+    spacing: 2px;
+    border-radius: 8px;
+    background-color: rgba(0, 0, 0, 0.08);
+    padding: 2px;
+}
+
+.o-tiling-spin-btn {
+    border-radius: 6px;
+    padding: 4px 6px;
+}
+
+.o-tiling-spin-btn:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+.o-tiling-spin-btn:active {
+    background-color: rgba(0, 0, 0, 0.16);
+}
+
+.o-tiling-spin-value {
+    min-width: 24px;
+    text-align: center;
+    padding: 0 4px;
+}
+
+/* ── Panel menu color swatch ─────────────────────────────── */
+
+.o-tiling-color-swatch {
+    border-radius: 50px;
+    border: 2px solid rgba(0, 0, 0, 0.15);
+    min-width: 22px;
+    min-height: 22px;
+}
+
+.o-tiling-color-swatch:hover {
+    border-color: rgba(0, 0, 0, 0.35);
+}
+
+/* ── Search dialog ───────────────────────────────────────── */
+
+.o-tiling-search-element:select {
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 5px;
+    color: #333;
+}
+
+.o-tiling-search-icon {
+    margin-right: 10px;
+}
+
+.o-tiling-search-cat {
+    margin-right: 10px;
+}
+
+.o-tiling-search-element {
+    padding-left: 10px;
+    padding-right: 2px;
+    padding-top: 6px;
+    padding-bottom: 6px;
+}
+
+/* ── Tab bar (stacking) — frosted-glass redesign ─────────── */
+
+.o-tiling-stack {
+    background-color: rgba(0, 0, 0, 0.52);
+    border-radius: 10px 10px 0px 0px;
+    border-bottom: 0.5px solid rgba(255, 255, 255, 0.08);
+    padding: 5px 8px;
+    spacing: 4px;
+    min-height: 38px;
+}
+
+.o-tiling-tab {
+    border-radius: 6px;
+    padding: 2px 10px;
+    font-size: 13px;
+    font-weight: 400;
+    color: rgba(255, 255, 255, 0.50);
+    background-color: transparent;
+    border: none;
+    transition-duration: 150ms;
+    transition-property: background-color, color;
+    max-width: 160px;
+}
+
+.o-tiling-tab:hover {
+    background-color: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.80);
+}
+
+.o-tiling-tab-active {
+    font-weight: 500;
+    color: #ffffff;
+    /* background-color is set programmatically from hint_color_rgba() */
+}
+
+.o-tiling-tab-inactive {
+    color: rgba(255, 255, 255, 0.50);
+    background-color: transparent;
+}
+
+.o-tiling-tab-urgent {
+    animation-name: o-tiling-pulse;
+    animation-duration: 1.4s;
+    animation-timing-function: ease-in-out;
+    animation-iteration-count: infinite;
+}
+
+@keyframes o-tiling-pulse {
+
+    0%,
+    100% {
+        background-color: rgba(224, 27, 36, 0.25);
+    }
+
+    50% {
+        background-color: rgba(224, 27, 36, 0.55);
+    }
+}
+
+/* ── Panel menu enhancements ─────────────────────────────── */
+
+.o-tiling-menu {
+    min-width: 300px;
+}
+
+.popup-menu-icon {
+    margin-right: 12px;
+}
+
+/* ── Workspace number pill bar ───────────────────────────── */
+
+.o-tiling-ws-bar {
+    spacing: 3px;
+    padding: 0 2px;
+}
+
+/* Overview toggle button — same pill style as number buttons */
+.o-tiling-ws-overview-btn {
+    border-radius: 99px;
+    border: none;
+    padding: 2px 7px;
+    min-width: 20px;
+    min-height: 20px;
+    background-color: rgba(255, 255, 255, 0.10);
+    transition-duration: 120ms;
+}
+
+.o-tiling-ws-overview-btn StIcon {
+    color: rgba(255, 255, 255, 0.60);
+    icon-shadow: none;
+}
+
+.o-tiling-ws-overview-btn:hover,
+.o-tiling-ws-overview-btn:focus {
+    border: none;
+    background-color: rgba(255, 255, 255, 0.18);
+}
+
+.o-tiling-ws-overview-btn:hover StIcon {
+    color: rgba(255, 255, 255, 0.95);
+}
+
+.o-tiling-ws-overview-btn:active {
+    border: none;
+    background-color: rgba(255, 255, 255, 0.24);
+}
+
+/* Individual workspace number pill — all have a visible bg pill */
+.o-tiling-ws-btn {
+    border-radius: 99px;
+    border: none;
+    padding: 2px 8px;
+    min-width: 22px;
+    min-height: 20px;
+    font-size: 12px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.60);
+    background-color: rgba(255, 255, 255, 0.10);
+    transition-duration: 120ms;
+}
+
+.o-tiling-ws-btn:hover,
+.o-tiling-ws-btn:focus {
+    border: none;
+    background-color: rgba(255, 255, 255, 0.18);
+    color: rgba(255, 255, 255, 0.90);
+}
+
+/* Active pill — ring & text color set inline from hint_color_rgba() in JS */
+.o-tiling-ws-btn-active {
+    border: none;
+    background-color: rgba(255, 255, 255, 0.06);
+    font-weight: 700;
+}
+
+.o-tiling-ws-btn-active:hover,
+.o-tiling-ws-btn-active:focus {
+    border: none;
+    background-color: rgba(255, 255, 255, 0.14);
+}
+
+
+/* ── Dark Mode Overrides ────────────────────────────────────── */
+
+@media (prefers-color-scheme: dark) {
+    .o-tiling-spin-box {
+        background-color: rgba(255, 255, 255, 0.06);
+    }
+
+    .o-tiling-spin-btn:hover {
+        background-color: rgba(255, 255, 255, 0.12);
+    }
+
+    .o-tiling-spin-btn:active {
+        background-color: rgba(255, 255, 255, 0.18);
+    }
+
+    .o-tiling-color-swatch {
+        border: 2px solid rgba(255, 255, 255, 0.15);
+    }
+
+    .o-tiling-color-swatch:hover {
+        border-color: rgba(255, 255, 255, 0.35);
+    }
+
+    .o-tiling-search-element:select {
+        background: rgba(246, 246, 246, .2);
+        color: #EDEDED;
+    }
+
+    /* ws-btn-active inherits --accent-color automatically — no override needed */
+}
+
+
+/* ── High Contrast Overrides ─────────────────────────────────── */
+
+@media (prefers-contrast: more) {
+    .o-tiling-active-hint {
+        border-color: #ffffff;
+        box-shadow: 0 0 0 2px #000000;
+    }
+
+    .o-tiling-overlay {
+        background-color: rgba(255, 255, 255, 0.4);
+    }
+
+    .o-tiling-tab {
+        border: 2px solid white;
+        color: white;
+    }
+
+    .o-tiling-tab-active {
+        background: white;
+        color: black;
+    }
+
+    .o-tiling-tab-inactive {
+        background: black;
+        color: white;
+    }
+
+    .o-tiling-tab-urgent {
+        background: #ff0000;
+        color: white;
+    }
+}

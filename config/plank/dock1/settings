@@ -1,0 +1,7 @@
+[PlankDockPreferences]
+Theme=Gtk+
+Position=BOTTOM
+Alignment=CENTER
+IconSize=48
+HideMode=WINDOW_DODGE
+PinnedOnly=false

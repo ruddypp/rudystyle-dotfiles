@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema id="org.gnome.shell.extensions.transparent-windows" path="/org/gnome/shell/extensions/transparent-windows/">
+    <key name="active-window-opacity" type="i">
+      <default>88</default>
+      <summary>The opacity percentage of windows</summary>
+      <description>Focused window opacity percentage, from 5% (mostly transparent) to 100% (completely opaque).</description>
+    </key>
+    <key name="inactive-window-opacity" type="i">
+      <default>44</default>
+      <summary>The opacity percentage of windows</summary>
+      <description>Inactive windows opacity percentage, from 5% (mostly transparent) to 100% (completely opaque).</description>
+    </key>
+  </schema>
+</schemalist> 
+

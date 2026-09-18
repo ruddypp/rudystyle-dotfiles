@@ -1,0 +1,18 @@
+# GNOME desktop packages for Fedora
+gnome-tweaks
+gnome-extensions-app
+gnome-shell-extension-appindicator
+gnome-shell-extension-dash-to-dock
+gnome-shell-extension-just-perfection
+gnome-shell-extension-user-theme
+gnome-shell-extension-places-menu
+gnome-shell-extension-apps-menu
+gnome-shell-extension-window-list
+gnome-shell-extension-launch-new-instance
+gnome-shell-extension-background-logo
+plank
+dconf
+git
+curl
+unzip
+fontconfig

@@ -1,0 +1,8 @@
+# backups and editor leftovers
+*.bak
+*.swp
+*.swo
+*~
+
+# local machine state
+.DS_Store

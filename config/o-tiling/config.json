@@ -1,0 +1,182 @@
+{
+  "float": [
+    {
+      "class": "o-tiling-example",
+      "title": "o-tiling-example"
+    }
+  ],
+  "skiptaskbarhidden": [],
+  "log_on_focus": false,
+  "_compiled_float": [
+    {
+      "classRe": {},
+      "titleRe": null
+    },
+    {
+      "classRe": {},
+      "titleRe": null
+    },
+    {
+      "classRe": {},
+      "titleRe": null
+    },
+    {
+      "classRe": {},
+      "titleRe": null
+    },
+    {
+      "classRe": null,
+      "titleRe": {}
+    },
+    {
+      "classRe": {},
+      "titleRe": {}
+    },
+    {
+      "classRe": {},
+      "titleRe": null
+    },
+    {
+      "classRe": {},
+      "titleRe": {}
+    },
+    {
+      "classRe": {},
+      "titleRe": null
+    },
+    {
+      "classRe": {},
+      "titleRe": {}
+    },
+    {
+      "classRe": {},
+      "titleRe": null
+    },
+    {
+      "classRe": {},
+      "titleRe": null
+    },
+    {
+      "classRe": null,
+      "titleRe": {}
+    },
+    {
+      "classRe": {},
+      "titleRe": {}
+    },
+    {
+      "classRe": {},
+      "titleRe": null
+    },
+    {
+      "classRe": {},
+      "titleRe": {}
+    },
+    {
+      "classRe": {},
+      "titleRe": null
+    },
+    {
+      "classRe": {},
+      "titleRe": {}
+    },
+    {
+      "classRe": {},
+      "titleRe": {}
+    },
+    {
+      "classRe": {},
+      "titleRe": {}
+    },
+    {
+      "classRe": {},
+      "titleRe": {}
+    },
+    {
+      "classRe": {},
+      "titleRe": {}
+    },
+    {
+      "classRe": {},
+      "titleRe": null
+    },
+    {
+      "classRe": {},
+      "titleRe": null
+    },
+    {
+      "classRe": {},
+      "titleRe": null
+    },
+    {
+      "classRe": {},
+      "titleRe": {}
+    },
+    {
+      "classRe": {},
+      "titleRe": {}
+    },
+    {
+      "classRe": {},
+      "titleRe": {}
+    },
+    {
+      "classRe": {},
+      "titleRe": null
+    },
+    {
+      "classRe": {},
+      "titleRe": null
+    },
+    {
+      "classRe": {},
+      "titleRe": null
+    },
+    {
+      "classRe": {},
+      "titleRe": null
+    },
+    {
+      "classRe": {},
+      "titleRe": null
+    },
+    {
+      "classRe": {},
+      "titleRe": null
+    },
+    {
+      "classRe": {},
+      "titleRe": null
+    },
+    {
+      "classRe": {},
+      "titleRe": null
+    },
+    {
+      "classRe": {},
+      "titleRe": null
+    }
+  ],
+  "_compiled_skip": [
+    {
+      "classRe": {},
+      "titleRe": null
+    },
+    {
+      "classRe": {},
+      "titleRe": null
+    },
+    {
+      "classRe": {},
+      "titleRe": null
+    },
+    {
+      "classRe": {},
+      "titleRe": null
+    },
+    {
+      "classRe": {},
+      "titleRe": null
+    }
+  ]
+}

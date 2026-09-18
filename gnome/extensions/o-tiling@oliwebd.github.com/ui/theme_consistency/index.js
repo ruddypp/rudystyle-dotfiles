@@ -1,0 +1,83 @@
+import GLib from 'gi://GLib';
+import Gio from 'gi://Gio';
+import St from 'gi://St';
+import * as log from '../../utils/log.js';
+import { getGnomeShellCss } from './gnome_shell.js';
+
+/** Manages the GNOME Shell session-level CSS injection for theme consistency. This works even if the "User Themes" extension is NOT installed. */
+export class ThemeConsistencyManager {
+    _file = null;
+    _currentStyle = 'rounded';
+    enable(style = 'rounded') {
+        if (this._file && this._currentStyle === style)
+            return;
+        if (this._file) {
+            this.disable();
+        }
+        this._currentStyle = style;
+        const path = `/tmp/o-tiling-theme-consistency-${GLib.get_monotonic_time()}.css`;
+        try {
+            const css = getGnomeShellCss(style);
+            GLib.file_set_contents(path, css);
+            this._file = Gio.File.new_for_path(path);
+            const theme = St.ThemeContext.get_for_stage(global.stage).get_theme();
+            if (theme) {
+                theme.load_stylesheet(this._file);
+                log.info(`ThemeConsistencyManager: session CSS (${style}) injected`);
+            }
+            else {
+                if (this._file && this._file.query_exists(null)) {
+                    try {
+                        this._file.delete(null);
+                    }
+                    catch (err) {
+                        log.warn(`Failed to delete temporary CSS file: ${err}`);
+                    }
+                }
+                this._file = null;
+            }
+        }
+        catch (e) {
+            log.error(`ThemeConsistencyManager: failed to inject CSS: ${e}`);
+            if (this._file && this._file.query_exists(null)) {
+                try {
+                    this._file.delete(null);
+                }
+                catch (err) {
+                    log.warn(`Failed to delete temporary CSS file: ${err}`);
+                }
+            }
+            this._file = null;
+        }
+    }
+    disable() {
+        if (!this._file)
+            return;
+        const theme = St.ThemeContext.get_for_stage(global.stage).get_theme();
+        if (theme) {
+            try {
+                theme.unload_stylesheet(this._file);
+            }
+            catch (e) {
+                log.warn(`ThemeConsistencyManager: failed to unload stylesheet: ${e}`);
+            }
+        }
+        if (this._file.query_exists(null)) {
+            try {
+                this._file.delete(null);
+            }
+            catch (e) {
+                log.warn(`ThemeConsistencyManager: failed to delete CSS file: ${e}`);
+            }
+        }
+        this._file = null;
+    }
+    get isEnabled() {
+        return this._file !== null;
+    }
+    updateStyle(style) {
+        if (this.isEnabled) {
+            this.enable(style);
+        }
+    }
+}

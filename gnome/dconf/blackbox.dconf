@@ -1,0 +1,5 @@
+[BlackBox]
+cursor-blink-mode=uint32 0
+opacity=uint32 51
+window-height=uint32 580
+window-width=uint32 1366

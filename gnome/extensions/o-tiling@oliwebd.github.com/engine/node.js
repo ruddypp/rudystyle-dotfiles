@@ -1,0 +1,195 @@
+import * as Ecs from '../core/ecs.js';
+import { TAB_HEIGHT } from './stack.js';
+
+/** A node is either a fork a window */
+export var NodeKind;
+(function (NodeKind) {
+    NodeKind[NodeKind["FORK"] = 1] = "FORK";
+    NodeKind[NodeKind["WINDOW"] = 2] = "WINDOW";
+    NodeKind[NodeKind["STACK"] = 3] = "STACK";
+})(NodeKind || (NodeKind = {}));
+
+/** Fetch the string representation of this value */
+function node_variant_as_string(value) {
+    return value == NodeKind.FORK ? 'NodeVariant::Fork' : 'NodeVariant::Window';
+}
+function stack_detach(node, stack, idx) {
+    node.entities.splice(idx, 1);
+    stack.remove_by_pos(idx);
+}
+
+export function stack_find(node, entity) {
+    let idx = 0;
+    while (idx < node.entities.length) {
+        if (Ecs.entity_eq(entity, node.entities[idx])) {
+            return idx;
+        }
+        idx += 1;
+    }
+    return null;
+}
+
+/** Move the window in a stack to the left, and detach if it it as the end. */
+export function stack_move_left(ext, forest, node, entity) {
+    const stack = forest.stacks.get(node.idx);
+    if (!stack)
+        return false;
+    let idx = 0;
+    for (const cmp of node.entities) {
+        if (Ecs.entity_eq(cmp, entity)) {
+            if (idx === 0) {
+                // Remove the window from the stack
+                stack_detach(node, stack, 0);
+                return false;
+            }
+            else {
+                // Swap tabs in the stack
+                stack_swap(node, idx - 1, idx);
+                stack.active_id -= 1;
+                ext.auto_tiler?.update_stack(ext, node);
+                return true;
+            }
+        }
+        idx += 1;
+    }
+    return false;
+}
+
+/** Move the window in a stack to the right, and detach if it is at the end. */
+export function stack_move_right(ext, forest, node, entity) {
+    const stack = forest.stacks.get(node.idx);
+    if (!stack)
+        return false;
+    let moved = false;
+    let idx = 0;
+    const max = node.entities.length - 1;
+    for (const cmp of node.entities) {
+        if (Ecs.entity_eq(cmp, entity)) {
+            if (idx === max) {
+                stack_detach(node, stack, idx);
+                moved = false;
+            }
+            else {
+                stack_swap(node, idx + 1, idx);
+                stack.active_id += 1;
+                ext.auto_tiler?.update_stack(ext, node);
+                moved = true;
+            }
+            break;
+        }
+        idx += 1;
+    }
+    return moved;
+}
+
+export function stack_replace(ext, node, window) {
+    if (!ext.auto_tiler)
+        return;
+    const stack = ext.auto_tiler.forest.stacks.get(node.idx);
+    if (!stack)
+        return;
+    stack.replace(window);
+}
+
+/** Removes a window from a stack */
+export function stack_remove(forest, node, entity) {
+    const stack = forest.stacks.get(node.idx);
+    if (!stack)
+        return null;
+    const idx = stack.remove_tab(entity);
+    if (idx !== null)
+        node.entities.splice(idx, 1);
+    return idx;
+}
+function stack_swap(node, from, to) {
+    const tmp = node.entities[from];
+    node.entities[from] = node.entities[to];
+    node.entities[to] = tmp;
+}
+
+/** A tiling node may either refer to a window entity, or another fork entity */
+export class Node {
+    /** The actual data for this node */
+    inner;
+    constructor(inner) {
+        this.inner = inner;
+    }
+    /** Create a fork variant of a `Node` */
+    static fork(entity) {
+        return new Node({ kind: NodeKind.FORK, entity });
+    }
+    /** Create the window variant of a `Node` */
+    static window(entity) {
+        return new Node({ kind: NodeKind.WINDOW, entity });
+    }
+    static stacked(window, idx) {
+        const node = new Node({
+            kind: NodeKind.STACK,
+            entities: [window],
+            idx,
+            rect: null,
+        });
+        return node;
+    }
+    /** Generates a string representation of the this value. */
+    display(fmt) {
+        fmt += `{\n    kind: ${node_variant_as_string(this.inner.kind)},\n    `;
+        switch (this.inner.kind) {
+            // Fork + Window
+            case 1:
+            case 2:
+                fmt += `entity: (${this.inner.entity})\n  }`;
+                return fmt;
+            // Stack
+            case 3:
+                fmt += `entities: ${this.inner.entities}\n  }`;
+                return fmt;
+        }
+    }
+    /** Check if the entity exists as a child of this stack */
+    is_in_stack(entity) {
+        if (this.inner.kind === 3) {
+            for (const compare of this.inner.entities) {
+                if (Ecs.entity_eq(entity, compare))
+                    return true;
+            }
+        }
+        return false;
+    }
+    /** Asks if this fork is the fork we are looking for */
+    is_fork(entity) {
+        return this.inner.kind === 1 && Ecs.entity_eq(this.inner.entity, entity);
+    }
+    /** Asks if this window is the window we are looking for */
+    is_window(entity) {
+        return this.inner.kind === 2 && Ecs.entity_eq(this.inner.entity, entity);
+    }
+    /** Calculates the future arrangement of windows in this node */
+    measure(tiler, ext, parent, area, record) {
+        switch (this.inner.kind) {
+            // Fork
+            case 1:
+                const fork = tiler.forks.get(this.inner.entity);
+                if (fork && typeof record === 'function') {
+                    fork.measure(tiler, ext, area, record);
+                }
+                break;
+            // Window
+            case 2:
+                record(this.inner.entity, parent, area.clone());
+                break;
+            // Stack
+            case 3:
+                const tab_height = TAB_HEIGHT * ext.dpi;
+                this.inner.rect = area.clone();
+                this.inner.rect.y += tab_height;
+                this.inner.rect.height -= tab_height;
+                for (const entity of this.inner.entities) {
+                    record(entity, parent, this.inner.rect);
+                }
+                if (ext.auto_tiler) {
+                    ext.auto_tiler.forest.stack_updates.push([this.inner, parent]);
+                }
+        }
+    }
+}

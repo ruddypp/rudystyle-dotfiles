@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=9Router
+Comment=9Router API Proxy
+Exec=/home/ruddypp/.nvm/versions/node/v24.12.0/bin/node /home/ruddypp/Documents/work/9router/cli/cli.js --tray --skip-update
+Hidden=true
+NoDisplay=false
+X-GNOME-Autostart-enabled=false

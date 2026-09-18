@@ -1,0 +1,289 @@
+import St from 'gi://St';
+import Gio from 'gi://Gio';
+import GLib from 'gi://GLib';
+import Clutter from 'gi://Clutter';
+import { PACKAGE_VERSION } from 'resource:///org/gnome/shell/misc/config.js';
+import * as Main from 'resource:///org/gnome/shell/ui/main.js';
+import * as Utils from '../utils/utils.js';
+import * as log from '../utils/log.js';
+// ── Version gate ─────────────────────────────────────────────────────────────
+/** Returns true when running on GNOME Shell 48 or newer (horizontal overview). */
+export function isGnome50() {
+    const major = parseInt(PACKAGE_VERSION.split('.')[0], 10);
+    return major >= 50;
+}
+
+// ── CSS builder ──────────────────────────────────────────────────────────────
+/**
+ * Builds the full CSS string for the workspace switcher bar.
+ *
+ * Targets confirmed GNOME 50 selectors:
+ *   .workspace-thumbnails         – the horizontal strip container
+ *   .workspace-thumbnail          – individual workspace preview cards
+ *   .workspace-thumbnail:focus    – active / focused card
+ */
+function buildCss(accentColor) {
+    const radius = 3;
+    const border = 3;
+    const innerRadius = radius - border;
+    const activeColor = (accentColor === 'auto' || !Utils.isValidColor(accentColor))
+        ? '#3584e4'
+        : accentColor;
+    return `
+        .workspace-thumbnails,
+        .thumbnails-box,
+        .workspace-thumbnails-container {
+            background-color: transparent !important;
+            background: transparent !important;
+        }
+
+        .workspace-thumbnails {
+            padding: 12px 16px;
+            spacing: 12px;
+            border-radius: 0px;
+            border: none !important;
+        }
+
+        .workspace-thumbnail {
+            border-radius: ${radius}px !important;
+            border: ${border}px solid transparent;
+            transition: border-color 200ms ease-out, background-color 200ms ease-out;
+        }
+
+        .workspace-thumbnail-background {
+            border-radius: ${innerRadius}px !important;
+            background-color: transparent;
+        }
+
+        .workspace-thumbnail:focus,
+        .workspace-thumbnail.selected {
+            border-color: ${activeColor} !important;
+            border-width: ${border}px !important;
+            border-radius: ${radius}px !important;
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+
+        .workspace-thumbnail:hover {
+            border-color: rgba(255, 255, 255, 0.25) !important;
+            background-color: rgba(255, 255, 255, 0.06);
+            border-radius: ${radius}px !important;
+        }
+
+        .workspace-label {
+            color: rgba(255, 255, 255, 0.85);
+            font-size: 12px;
+            font-weight: 600;
+            text-align: center;
+            padding-top: 6px;
+        }
+    `.replace(/\s+/g, ' ').trim();
+}
+
+// ── WorkspaceSwitcherStyle ────────────────────────────────────────────────────
+export class WorkspaceSwitcherStyle {
+    _file = null;
+    _accentColor;
+    _origMaxThumbnailScale = null;
+    _origMinThumbnailScale = null;
+    _origUpdateMaxThumbnailScale = null;
+    constructor(accentColor) {
+        this._accentColor = accentColor;
+    }
+    /** Injects custom CSS into the Shell theme. No-op if already enabled. */
+    enable() {
+        if (this._file)
+            return;
+        const css = buildCss(this._accentColor);
+        const path = `/tmp/o-tiling-ws-style-${GLib.get_monotonic_time()}.css`;
+        try {
+            GLib.file_set_contents(path, css);
+            this._file = Gio.File.new_for_path(path);
+            const theme = St.ThemeContext.get_for_stage(global.stage).get_theme();
+            theme.load_stylesheet(this._file);
+            this._applyThumbnailScale();
+            this._setupAutoScroll();
+        }
+        catch (e) {
+            log.error(`WorkspaceSwitcherStyle: failed to load CSS: ${e}`);
+            this._file = null;
+        }
+    }
+    /** Removes the injected CSS from the Shell theme. */
+    disable() {
+        this._teardownAutoScroll();
+        if (!this._file)
+            return;
+        const theme = St.ThemeContext.get_for_stage(global.stage).get_theme();
+        try {
+            theme.unload_stylesheet(this._file);
+        }
+        catch (e) {
+            log.warn(`WorkspaceSwitcherStyle: failed to unload stylesheet: ${e}`);
+        }
+        this._restoreThumbnailScale();
+        this._teardownSignals();
+        try {
+            this._file.delete(null);
+        }
+        catch (e) {
+            log.warn(`WorkspaceSwitcherStyle: failed to delete stylesheet file: ${e}`);
+        }
+        this._file = null;
+    }
+    /** Hot-updates the accent colour. */
+    updateAccentColor(rgba) {
+        this._accentColor = rgba;
+        this._refresh();
+    }
+    _refresh() {
+        if (this._file) {
+            this.disable();
+            this.enable();
+        }
+    }
+    /** True while the CSS is currently injected. */
+    get isEnabled() {
+        return this._file !== null;
+    }
+    _getThumbnailsBox() {
+        const ov = Main.overview;
+        // GNOME 45+ (including 50)
+        if (ov._overviewControls?._thumbnailsBox) {
+            log.debug('WorkspaceSwitcherStyle: found thumbnailsBox in _overviewControls');
+            return ov._overviewControls._thumbnailsBox;
+        }
+        // Fallbacks for older/different layouts
+        const manager = ov._overviewControls || ov._controls || ov._overview?._controls;
+        const box = manager?._thumbnailsBox || manager?._controls?._thumbnailsBox || null;
+        if (box)
+            log.debug('WorkspaceSwitcherStyle: found thumbnailsBox via fallback manager');
+        else
+            log.debug('WorkspaceSwitcherStyle: could NOT find thumbnailsBox');
+        return box;
+    }
+    _getPreferredScale() {
+        const monitor = Main.layoutManager.primaryMonitor;
+        const availWidth = monitor.width - 64; // Account for safe margins
+        const nWorkspaces = global.workspace_manager.n_workspaces;
+        const aspectRatio = monitor.width / monitor.height;
+        const spacing = 12; // Matching CSS spacing
+        // Calculate scale based on hardcoded 15% preference
+        let scale = 15 / 100;
+        // Calculate total width if we used the preferred scale
+        const preferredWidth = (monitor.height * scale * aspectRatio + spacing) * nWorkspaces - spacing;
+        if (preferredWidth > availWidth) {
+            // Shrink scale so all thumbnails fit on screen
+            const maxThumbWidth = (availWidth + spacing) / nWorkspaces - spacing;
+            scale = (maxThumbWidth / aspectRatio) / monitor.height;
+            // Minimum usable scale
+            scale = Math.max(scale, 0.02);
+        }
+        return scale;
+    }
+    /** Applies the percentage-based scale to ThumbnailsBox. Patches the instance's _updateMaxThumbnailScale to ensure it's sticky. */
+    _applyThumbnailScale() {
+        if (!isGnome50())
+            return;
+        try {
+            const thumbnailsBox = this._getThumbnailsBox();
+            if (!thumbnailsBox)
+                return;
+            // 1. Center the thumbnails strip horizontally
+            thumbnailsBox.set_x_expand(false);
+            thumbnailsBox.set_x_align(Clutter.ActorAlign.CENTER);
+            const parent = thumbnailsBox.get_parent();
+            if (parent) {
+                parent.set_x_expand(true);
+                parent.set_x_align(Clutter.ActorAlign.FILL);
+            }
+            // 2. Patch the update method so Shell can't override our scale
+            if (!this._origUpdateMaxThumbnailScale && typeof thumbnailsBox._updateMaxThumbnailScale === 'function') {
+                log.debug('WorkspaceSwitcherStyle: patching ThumbnailsBox._updateMaxThumbnailScale');
+                this._origUpdateMaxThumbnailScale = thumbnailsBox._updateMaxThumbnailScale;
+                const self = this;
+                thumbnailsBox._updateMaxThumbnailScale = function (...args) {
+                    // Call original to let Shell do its thing (calculating its own internal _maxThumbnailScale)
+                    self._origUpdateMaxThumbnailScale.apply(this, args);
+                    // Then override with our preferred scale
+                    const scale = self._getPreferredScale();
+                    this._maxThumbnailScale = scale;
+                    this._minThumbnailScale = scale;
+                    log.debug(`WorkspaceSwitcherStyle: enforced thumbnail scale ${scale}`);
+                    // Ensure alignment is also enforced during updates
+                    this.set_x_expand(false);
+                    this.set_x_align(Clutter.ActorAlign.CENTER);
+                    this.queue_relayout();
+                };
+            }
+            // Initial force update
+            const scale = this._getPreferredScale();
+            if (this._origMaxThumbnailScale === null) {
+                this._origMaxThumbnailScale = thumbnailsBox._maxThumbnailScale ?? null;
+            }
+            if (this._origMinThumbnailScale === null) {
+                this._origMinThumbnailScale = thumbnailsBox._minThumbnailScale ?? null;
+            }
+            thumbnailsBox._maxThumbnailScale = scale;
+            thumbnailsBox._minThumbnailScale = scale;
+            thumbnailsBox.queue_relayout();
+            thumbnailsBox.get_parent().queue_relayout();
+        }
+        catch (e) {
+            log.warn(`WorkspaceSwitcherStyle: failed to set thumbnail scale: ${e}`);
+        }
+    }
+    /** Restores the original _maxThumbnailScale on disable. */
+    _restoreThumbnailScale() {
+        if (!isGnome50())
+            return;
+        const thumbnailsBox = this._getThumbnailsBox();
+        if (thumbnailsBox) {
+            try {
+                if (this._origUpdateMaxThumbnailScale) {
+                    thumbnailsBox._updateMaxThumbnailScale = this._origUpdateMaxThumbnailScale;
+                    this._origUpdateMaxThumbnailScale = null;
+                }
+                if (this._origMaxThumbnailScale !== null)
+                    thumbnailsBox._maxThumbnailScale = this._origMaxThumbnailScale;
+                if (this._origMinThumbnailScale !== null)
+                    thumbnailsBox._minThumbnailScale = this._origMinThumbnailScale;
+                // Restore alignment
+                thumbnailsBox.set_x_expand(true);
+                thumbnailsBox.set_x_align(Clutter.ActorAlign.FILL);
+                thumbnailsBox.queue_relayout();
+            }
+            catch (e) {
+                log.warn(`WorkspaceSwitcherStyle: failed to restore thumbnail scale: ${e}`);
+            }
+        }
+        this._origMaxThumbnailScale = null;
+        this._origMinThumbnailScale = null;
+    }
+    _getWorkspacesDisplay() {
+        return Main.overview?._controls?._workspacesDisplay ||
+            Main.overview?._overview?._controls?._workspacesDisplay ||
+            null;
+    }
+    _setupAutoScroll() {
+        const workspace_manager = global.workspace_manager;
+        // 1. Rescale when workspaces are added/removed
+        workspace_manager.connectObject('workspace-added', () => {
+            this._applyThumbnailScale();
+        }, this);
+        workspace_manager.connectObject('workspace-removed', () => {
+            this._applyThumbnailScale();
+        }, this);
+        // 2. Rescale when overview shows (ensures state is fresh)
+        Main.overview.connectObject('showing', () => {
+            this._applyThumbnailScale();
+        }, this);
+    }
+    _teardownSignals() {
+        this._teardownAutoScroll();
+    }
+    _teardownAutoScroll() {
+        const workspace_manager = global.workspace_manager;
+        workspace_manager.disconnectObject(this);
+        Main.overview.disconnectObject(this);
+    }
+}

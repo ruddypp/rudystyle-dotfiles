@@ -1,0 +1,6 @@
+# Extensions fetched from extensions.gnome.org by `gext` during install.
+# Install them manually via Extension Manager if gext is not available.
+burn-my-windows@schneegans.github.com
+compiz-windows-effect@hermes83.github.com
+forge@jmmaranan.com
+tiling-assistant@leleat-on-github
