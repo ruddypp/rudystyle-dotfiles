@@ -1,5 +1,10 @@
-# Extensions fetched from extensions.gnome.org by `gext` during install.
-# Install them manually via Extension Manager if gext is not available.
+# Ekstensi yang terdaftar di dconf `enabled-extensions` tetapi berkasnya
+# TIDAK ada di disk saat backup ini dibuat (2026-09-20). GNOME menyimpan
+# nama di daftar itu meski ekstensinya sudah dihapus, jadi entri berikut
+# adalah sisa lama - bukan bagian desktop yang sedang berjalan.
+#
+# Kalau suatu saat mau dipakai lagi, pasang lewat Extension Manager
+# (flatpak com.mattjakeman.ExtensionManager) atau extensions.gnome.org:
 burn-my-windows@schneegans.github.com
 compiz-windows-effect@hermes83.github.com
 forge@jmmaranan.com

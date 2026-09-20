@@ -117,6 +117,10 @@ What is NOT covered, and has to be handled by hand:
 - **GNOME Keyring contents.** Saved passwords live in `~/.local/share/keyrings`
   and never belong in a public repo. Do not delete that directory when removing
   GNOME — `gnome-keyring` is a dependency of apps beyond GNOME.
+- **Four stale extensions.** `enabled-extensions` in dconf still lists
+  burn-my-windows, compiz-windows-effect, forge and tiling-assistant, but
+  their files were already gone when this backup was taken. They restore as
+  no-ops; reinstall them from extensions.gnome.org if you want them back.
 - **Development tooling.** `gnome/packages.txt` rebuilds the desktop only, not
   Docker, Node, PHP, databases or editors.
 - **COPR repositories.** `ghostty` comes from `scottames/ghostty`; the Hyprland
