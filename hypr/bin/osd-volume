@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# OSD volume. Kunci OSD-nya ada di x-canonical-private-synchronous:
+# notifikasi baru MENIMPA yang lama, jadi gak numpuk waktu tombol ditahan.
+case "$1" in
+  up)   wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 2%+ ;;
+  down) wpctl set-volume @DEFAULT_AUDIO_SINK@ 2%- ;;
+  mute) wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle ;;
+esac
+
+raw=$(wpctl get-volume @DEFAULT_AUDIO_SINK@)
+pct=$(awk '{printf "%d", $2 * 100}' <<<"$raw")
+
+if [[ "$raw" == *MUTED* ]]; then
+  notify-send -a osd -u low -h string:x-canonical-private-synchronous:osd-volume \
+    -h int:value:0 "Suara dibisukan"
+else
+  notify-send -a osd -u low -h string:x-canonical-private-synchronous:osd-volume \
+    -h int:value:"$pct" "Volume ${pct}%"
+fi

@@ -1,0 +1,22 @@
+# Paket kamar WM (Hyprland). Diverifikasi terpasang di Fedora 43.
+# COPR yang dibutuhkan: lionheartp/Hyprland, scottames/ghostty
+hyprland
+hyprlock
+hypridle
+hyprpaper
+xdg-desktop-portal-hyprland
+waybar
+wofi
+rofi
+nwg-dock-hyprland
+SwayNotificationCenter
+grimblast
+grim
+slurp
+wl-clipboard
+brightnessctl
+playerctl
+pavucontrol
+blueman
+nwg-look
+ghostty

@@ -1,0 +1,89 @@
+/* Launchpad ala macOS - dipanggil tombol 6x6 di dock.
+   Latar sengaja transparan: yang bikin buram itu layerrule Hyprland. */
+
+* {
+    bg: rgba(20, 20, 22, 0.72);
+    fg: #ffffff;
+    fg-dim: rgba(255, 255, 255, 0.65);
+    sel: rgba(255, 255, 255, 0.16);
+    font: "Adwaita Sans 11";
+}
+
+window {
+    fullscreen: true;
+    transparency: "real";
+    background-color: @bg;
+    padding: 70px 110px;
+    children: [ mainbox ];
+}
+
+mainbox {
+    background-color: transparent;
+    spacing: 34px;
+    children: [ inputbar, listview ];
+}
+
+inputbar {
+    background-color: rgba(255, 255, 255, 0.12);
+    border: 1px;
+    border-color: rgba(255, 255, 255, 0.16);
+    border-radius: 12px;
+    padding: 8px 14px;
+    spacing: 8px;
+    width: 360px;
+    expand: false;
+    horizontal-align: 0.5;
+    children: [ prompt, entry ];
+}
+
+prompt {
+    background-color: transparent;
+    text-color: @fg-dim;
+}
+
+entry {
+    background-color: transparent;
+    text-color: @fg;
+    placeholder: "Cari aplikasi";
+    placeholder-color: @fg-dim;
+    cursor: text;
+}
+
+listview {
+    background-color: transparent;
+    columns: 6;
+    lines: 4;
+    flow: horizontal;
+    fixed-columns: true;
+    fixed-height: true;
+    spacing: 18px;
+    scrollbar: false;
+}
+
+/* Inti Launchpad: ikon DI ATAS nama, bukan di sampingnya */
+element {
+    background-color: transparent;
+    orientation: vertical;
+    padding: 18px 10px;
+    border-radius: 20px;
+    spacing: 10px;
+    cursor: pointer;
+    children: [ element-icon, element-text ];
+}
+
+element selected {
+    background-color: @sel;
+}
+
+element-icon {
+    background-color: transparent;
+    size: 72px;
+    horizontal-align: 0.5;
+}
+
+element-text {
+    background-color: transparent;
+    text-color: @fg;
+    horizontal-align: 0.5;
+    vertical-align: 0.5;
+}

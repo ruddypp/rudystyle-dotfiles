@@ -1,0 +1,57 @@
+/* Dock kamar WM — gaya macOS / WhiteSur-Dark.
+   Selector yang dikenal nwg-dock: window, #box, #active, button, image. */
+
+window {
+  background: rgba(40, 40, 42, 0.82);
+  border-radius: 22px;
+  border-style: solid;
+  border-width: 1px;
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+#box {
+  /* Ruang napas di sekeliling deretan ikon */
+  padding: 8px 12px;
+}
+
+button,
+image {
+  background: none;
+  border-style: none;
+  box-shadow: none;
+  color: #ffffff;
+}
+
+button {
+  padding: 4px;
+  margin-left: 3px;
+  margin-right: 3px;
+  border-radius: 14px;
+  font-size: 12px;
+  transition: background-color 150ms ease;
+}
+
+button:hover {
+  background-color: rgba(255, 255, 255, 0.16);
+}
+
+button:focus {
+  box-shadow: none;
+}
+
+/* Penanda jendela aktif — garis pendek di bawah ikon, ala titik macOS */
+#active {
+  border-bottom: solid 3px;
+  border-color: rgba(255, 255, 255, 0.55);
+}
+
+tooltip {
+  background: rgba(40, 40, 42, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 10px;
+}
+
+tooltip label {
+  color: #ffffff;
+  padding: 2px 4px;
+}

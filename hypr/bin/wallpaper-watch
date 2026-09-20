@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# Pantau perubahan wallpaper di dconf kamar hypr, terapkan langsung.
+# Efeknya: ganti Background di GNOME Settings -> wallpaper Hyprland ikut berubah.
+wallpaper-sync
+dconf watch /org/gnome/desktop/background/ | while read -r line; do
+  [[ "$line" == *picture-uri* ]] && wallpaper-sync
+done

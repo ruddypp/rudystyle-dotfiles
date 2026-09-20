@@ -1,0 +1,37 @@
+{
+  "$schema": "/etc/xdg/swaync/configSchema.json",
+
+  "ignore-gtk-theme": true,
+  "layer": "overlay",
+  "layer-shell": true,
+
+  "positionX": "center",
+  "positionY": "bottom",
+  "notification-window-width": 380,
+
+  "control-center-positionX": "right",
+  "control-center-positionY": "top",
+  "control-center-layer": "top",
+  "control-center-width": 460,
+  "control-center-height": 600,
+  "control-center-margin-top": 8,
+  "control-center-margin-right": 8,
+
+  "timeout": 8,
+  "timeout-low": 2,
+  "timeout-critical": 0,
+
+  "transition-time": 180,
+  "notification-grouping": true,
+  "relative-timestamps": true,
+  "image-visibility": "when-available",
+  "hide-on-action": true,
+  "text-empty": "Tidak ada notifikasi",
+
+  "widgets": ["title", "dnd", "notifications"],
+  "widget-config": {
+    "title": { "text": "Notifikasi", "clear-all-button": true, "button-text": "Bersihkan" },
+    "dnd": { "text": "Jangan Ganggu" },
+    "notifications": { "vexpand": true }
+  }
+}

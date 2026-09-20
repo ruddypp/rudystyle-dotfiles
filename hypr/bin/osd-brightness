@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+case "$1" in
+  up)   brightnessctl -e4 -n2 set 5%+ >/dev/null ;;
+  down) brightnessctl -e4 -n2 set 5%- >/dev/null ;;
+esac
+
+# brightnessctl -m -> intel_backlight,backlight,4583,17%,26666
+pct=$(brightnessctl -m | cut -d, -f4 | tr -d '%')
+
+notify-send -a osd -u low -h string:x-canonical-private-synchronous:osd-brightness \
+  -h int:value:"$pct" "Kecerahan ${pct}%"

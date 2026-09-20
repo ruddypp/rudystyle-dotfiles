@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# Baca wallpaper dari dconf kamar hypr, pasang lewat IPC hyprpaper.
+# DCONF_PROFILE diwarisi dari Hyprland, jadi yang kebaca db hypr - bukan GNOME.
+
+uri=$(gsettings get org.gnome.desktop.background picture-uri-dark 2>/dev/null | tr -d "'")
+[[ -z "$uri" || "$uri" == "''" ]] && \
+  uri=$(gsettings get org.gnome.desktop.background picture-uri 2>/dev/null | tr -d "'")
+
+[[ -z "$uri" ]] && { echo "wallpaper-sync: dconf kosong"; exit 1; }
+
+# file:///path/with%20space -> /path/with space
+file=$(python3 -c 'import sys,urllib.parse as u; print(u.unquote(u.urlparse(sys.argv[1]).path))' "$uri")
+
+[[ -f "$file" ]] || { echo "wallpaper-sync: tidak ada file $file"; exit 1; }
+
+# tunggu IPC hyprpaper siap (maks ~5 detik)
+for _ in $(seq 1 50); do
+  hyprctl hyprpaper listloaded >/dev/null 2>&1 && break
+done
+
+hyprctl hyprpaper unload all    >/dev/null
+hyprctl hyprpaper preload "$file" >/dev/null
+hyprctl hyprpaper wallpaper ",$file" >/dev/null
+echo "wallpaper-sync: terpasang -> $file"
