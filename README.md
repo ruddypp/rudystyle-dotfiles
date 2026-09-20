@@ -92,6 +92,93 @@ With the default copy mode, re-run `./install.sh` after pulling.
 - **Tiling:** `o-tiling` and `tiling-assistant` for keyboard-driven tiling
 - **Terminal:** Ghostty `Carbon Glass` theme, 60% background opacity, `Ctrl+Shift+C/V` copy/paste, `Ctrl+N` new tab, `Alt+Tab` next tab
 
+## Restoring GNOME on a machine where GNOME was removed
+
+This repo is the fallback for a system running only Hyprland. The desktop
+itself is not in Git — only the packages that rebuild it and the settings that
+shape it. Restore in two passes, because dconf and extensions need a running
+GNOME session:
+
+```bash
+# Pass 1 - from Hyprland or a TTY. Installs GNOME, GDM, apps, themes, fonts.
+./install.sh
+
+# Reboot, pick "GNOME" on the login screen, then:
+
+# Pass 2 - from inside the GNOME session. Loads dconf and extensions.
+./install.sh --no-packages --no-assets
+```
+
+`install.sh` detects a missing GNOME session and skips the steps that need one,
+instead of refusing to run.
+
+What is NOT covered, and has to be handled by hand:
+
+- **GNOME Keyring contents.** Saved passwords live in `~/.local/share/keyrings`
+  and never belong in a public repo. Do not delete that directory when removing
+  GNOME — `gnome-keyring` is a dependency of apps beyond GNOME.
+- **Development tooling.** `gnome/packages.txt` rebuilds the desktop only, not
+  Docker, Node, PHP, databases or editors.
+- **COPR repositories.** `ghostty` comes from `scottames/ghostty`; the Hyprland
+  packages come from `lionheartp/Hyprland`. Enable those before installing.
+
+## The Hyprland room (`hypr/`)
+
+GNOME and Hyprland are kept as separate "rooms" that share one home directory.
+The split is enforced by `DCONF_PROFILE`, so each session reads and writes its
+own dconf database:
+
+```
+GNOME     -> ~/.config/dconf/user
+Hyprland  -> ~/.config/dconf/hypr   (via hypr/config/dconf-profile)
+```
+
+For that split to reach GTK applications, the environment has to be pushed into
+the systemd user manager, otherwise `xdg-desktop-portal-gtk` — the component
+that tells every GTK app which theme to use — reads GNOME's database instead:
+
+```
+exec-once = dbus-update-activation-environment --systemd DCONF_PROFILE ...
+exec-once = systemctl --user restart xdg-desktop-portal-gtk.service
+```
+
+Verify the wall is standing with:
+
+```bash
+gdbus call --session --dest org.freedesktop.portal.Desktop \
+  --object-path /org/freedesktop/portal/desktop \
+  --method org.freedesktop.portal.Settings.ReadOne \
+  org.gnome.desktop.interface icon-theme
+```
+
+Run inside Hyprland it must answer with the Hyprland room's icon theme, not
+GNOME's.
+
+**Never run both sessions at once** (fast user switching, a second VT). They
+share a single systemd user manager, so `DCONF_PROFILE` leaks across and the
+two rooms contaminate each other.
+
+Things that cannot be split, no matter the configuration:
+
+| Shared | Why |
+|---|---|
+| `~/.config/gtk-4.0/gtk.css` | The only route libadwaita accepts; it ignores `gtk-theme` |
+| Flatpak overrides | `flatpak override --user` has no concept of a session |
+| `~/.config/ghostty/config` | One file, both sessions |
+| `~/.icons/default/index.theme` | X11/XWayland cursor default |
+
+### Traps worth remembering
+
+- **GNOME Settings writes into whichever room launched it.** Opening the
+  Appearance panel from Hyprland rewrites — and can erase — that room's
+  `gtk-theme`, `icon-theme` and `font-name`. Use `nwg-look` there instead.
+- **Hyprland 0.53 rewrote the rule syntax.** `layerrule = blur, waybar` is
+  silently rejected; the current form is
+  `layerrule = blur on, ignore_alpha 0.2, match:namespace waybar`.
+  `hyprctl reload` answers `ok` either way — always check `hyprctl configerrors`.
+- **`pkill` matches a 15-character process name.** `pkill nwg-dock-hyprland`
+  never matches anything. Use `pkill -f`.
+
 ## Uninstall
 
 ```bash

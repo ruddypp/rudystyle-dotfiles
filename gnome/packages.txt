@@ -1,17 +1,47 @@
-# GNOME desktop packages for Fedora
+# Paket untuk MEMBANGUN ULANG desktop GNOME dari sistem yang sudah tidak punya GNOME.
+# Dipakai oleh install.sh (lewati dengan --no-packages).
+# Semua nama di bawah diverifikasi terpasang pada Fedora 43.
+
+# --- inti desktop: tanpa ini tidak ada sesi GNOME sama sekali ---
+gnome-shell
+gnome-session
+gnome-session-wayland-session
+mutter
+gdm
+gnome-control-center
+gnome-keyring
+xdg-desktop-portal-gnome
+xdg-desktop-portal-gtk
+
+# --- aplikasi GNOME yang dipakai harian ---
+nautilus
+gnome-text-editor
+gnome-disk-utility
+gnome-system-monitor
+gnome-calculator
+loupe
+gnome-software
+gnome-menus
+gnome-backgrounds
+ptyxis
+
+# --- alat penyetel tampilan ---
 gnome-tweaks
 gnome-extensions-app
+adw-gtk3-theme
+sassc
+dconf
+
+# --- ekstensi shell yang dipaketkan Fedora ---
 gnome-shell-extension-appindicator
 gnome-shell-extension-dash-to-dock
 gnome-shell-extension-just-perfection
 gnome-shell-extension-user-theme
 gnome-shell-extension-places-menu
-gnome-shell-extension-apps-menu
-gnome-shell-extension-window-list
 gnome-shell-extension-launch-new-instance
 gnome-shell-extension-background-logo
-plank
-dconf
+
+# --- prasyarat install.sh ---
 git
 curl
 unzip

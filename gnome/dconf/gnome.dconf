@@ -46,7 +46,7 @@ window-maximized=true
 window-size=(768, 600)
 
 [control-center]
-last-panel='background'
+last-panel='display'
 window-state=(1504, 737, true)
 
 [desktop/app-folders]
@@ -257,7 +257,7 @@ maximized=false
 show-dependencies=false
 show-whose-processes='user'
 window-height=737
-window-width=1504
+window-width=744
 
 [gnome-system-monitor/proctree]
 col-26-visible=false
@@ -284,7 +284,7 @@ default-folder-viewer='icon-view'
 migrated-gtk-settings=true
 
 [nautilus/window-state]
-initial-size=(360, 737)
+initial-size=(1504, 737)
 initial-size-file-chooser=(374, 753)
 maximized=true
 
@@ -333,13 +333,13 @@ zoom=1.0416900887671536
 last-folder-path='/home/ruddypp/Downloads'
 
 [portal/filechooser/code]
-last-folder-path='/home/ruddypp/Documents/daiki/cms-salon'
+last-folder-path='/home/ruddypp/Documents/work/seo-dashboard'
 
 [portal/filechooser/com.gigitux.youp]
 last-folder-path='/home/ruddypp/Pictures/Screenshots'
 
 [portal/filechooser/com.google.Chrome]
-last-folder-path='/home/ruddypp/Documents/work/seo-dashboard'
+last-folder-path='/home/ruddypp/Downloads'
 
 [portal/filechooser/com.usebottles.bottles]
 last-folder-path='/home/ruddypp/.var/app/com.usebottles.bottles/data/bottles/bottles/GhostCoder/dosdevices/c:/users/steamuser/AppData/Local/Programs/ghostcoder'
@@ -672,7 +672,7 @@ locations=@av []
 check-timestamp=int64 1788322444
 download-updates=false
 first-run=false
-flatpak-purge-timestamp=int64 1789528812
+flatpak-purge-timestamp=int64 1789797959
 install-timestamp=int64 1787397946
 packagekit-historical-updates-timestamp=uint64 1787397946
 security-timestamp=int64 1787287496815255

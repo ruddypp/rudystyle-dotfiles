@@ -168,8 +168,11 @@ install_wallpaper() {
 
 install_configs() {
   log "Installing configuration files"
-  place "config/gtk-3.0"      ".config/gtk-3.0"
-  place "config/gtk-4.0"      ".config/gtk-4.0"
+  # JANGAN timpa seluruh folder gtk-4.0: WhiteSur menaruh gtk.css, assets/
+  # dan windows-assets/ di situ. Menimpanya = app libadwaita kehilangan tema.
+  place "config/gtk-3.0/settings.ini" ".config/gtk-3.0/settings.ini"
+  place "config/gtk-3.0/bookmarks"    ".config/gtk-3.0/bookmarks"
+  place "config/gtk-4.0/settings.ini" ".config/gtk-4.0/settings.ini"
   place "config/plank"        ".config/plank"
   place "config/o-tiling"     ".config/o-tiling"
   place "config/ghostty"      ".config/ghostty"
@@ -187,8 +190,34 @@ install_configs() {
   done
 }
 
+ensure_libadwaita() {
+  # WhiteSur memasang gtk.css sebagai symlink ke varian yang dipilih.
+  # libadwaita mengabaikan gtk-theme; gtk.css adalah SATU-SATUNYA jalurnya.
+  local d="$HOME/.config/gtk-4.0"
+  [ -f "$d/gtk-Dark.css" ] || { warn "gtk-Dark.css tidak ada, lewati symlink libadwaita"; return 0; }
+  log "Memastikan symlink libadwaita (gtk.css)"
+  ln -sf "$d/gtk-Dark.css" "$d/gtk.css"
+  ln -sf "$d/gtk-Dark.css" "$d/gtk-dark.css"
+}
+
+install_flatpak_overrides() {
+  command -v flatpak >/dev/null 2>&1 || return 0
+  log "Memberi Flatpak akses baca ke tema"
+  flatpak override --user \
+    --filesystem=xdg-config/gtk-3.0:ro \
+    --filesystem=xdg-config/gtk-4.0:ro \
+    --filesystem=~/.themes:ro \
+    --filesystem=~/.icons:ro \
+    --filesystem=~/.local/share/icons:ro || warn "override flatpak gagal"
+}
+
 main() {
-  command -v gsettings >/dev/null 2>&1 || die "This installer targets a GNOME desktop session."
+  HAS_GNOME_SESSION=1
+  if ! command -v gsettings >/dev/null 2>&1; then
+    HAS_GNOME_SESSION=0
+    warn "GNOME belum terpasang. Paket dan berkas akan dipasang,"
+    warn "tapi langkah dconf/ekstensi dilewati. Reboot ke sesi GNOME lalu jalankan ulang."
+  fi
   log "Repo:   $REPO_DIR"
   log "Mode:   $MODE"
   log "Backup: $BACKUP_DIR"
@@ -197,10 +226,18 @@ main() {
   if [ "$INSTALL_ASSETS" = "1" ]; then install_assets; fi
 
   install_configs
+  ensure_libadwaita
+  install_flatpak_overrides
   install_wallpaper
-  install_dconf
-  install_extensions
-  enable_extensions
+
+  if [ "$HAS_GNOME_SESSION" = "1" ]; then
+    install_dconf
+    install_extensions
+    enable_extensions
+  else
+    warn "Lewati dconf & ekstensi: belum ada sesi GNOME."
+    warn "Reboot, pilih sesi GNOME di layar login, lalu jalankan ./install.sh lagi."
+  fi
 
   log "Done."
   cat <<EOF
