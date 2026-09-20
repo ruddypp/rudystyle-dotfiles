@@ -173,6 +173,19 @@ Things that cannot be split, no matter the configuration:
 
 ### Traps worth remembering
 
+- **`dconf load` is all-or-nothing.** The dump must not contain keys that a
+  system database locks, or the whole load is refused with "attempted to
+  modify one or more non-writable keys" and nothing is applied. authselect
+  locks `/org/gnome/login-screen/enable-{smartcard,fingerprint}-authentication`,
+  so that section is deliberately excluded from `gnome/dconf/gnome.dconf`.
+- **A second desktop writes into GNOME's dconf.** KDE's GTK Application Style
+  page sets `gtk-theme`, `icon-theme`, `cursor-theme`, `color-scheme`, the
+  three font keys and the sound theme under `org.gnome.desktop.*` - the same
+  keys GNOME reads. Restoring this backup fixes the keys it recorded, but a
+  key GNOME never set explicitly is absent from the dump and therefore cannot
+  be undone by loading it; reset those with `gsettings reset`.
+
+
 - **GNOME Settings writes into whichever room launched it.** Opening the
   Appearance panel from Hyprland rewrites — and can erase — that room's
   `gtk-theme`, `icon-theme` and `font-name`. Use `nwg-look` there instead.
